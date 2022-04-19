@@ -1,0 +1,16 @@
+{
+    "name": "Screen to Text",
+    "description": "Copies text in selected area to clipboard",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+        "select": {
+            "default_title": "Copy to clipboard",
+            "default_icon": "icons/copy.png"
+        }
+    },
+    "permissions": ["activeTab", "scripting"],
+    "background": {
+        "service_worker": "background.js"
+    }
+  }
