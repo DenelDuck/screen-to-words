@@ -1,5 +1,19 @@
+// modern Chrome requires { passive: false } when adding event
+var supportsPassive = false;
+try {
+  window.addEventListener("test", null, Object.defineProperty({}, 'passive', {
+    get: function () { supportsPassive = true; } 
+  }));
+} catch(e) {}
+
+var wheelOpt = supportsPassive ? { passive: false } : false;
+var wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel' : 'mousewheel';
+
+var divOverlay;
+
 chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
     console.log(response.imgsrc);
+    createOverlay();
     down = false;
     up = false;
     var x1, y1, x2, y2;
@@ -13,6 +27,7 @@ chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
         console.log(down, x1, y1);
         if(down && up){
             getImage(response.imgsrc, x1, y1, x2, y2);
+            removeOverlay();
         }
     }, {once: true})
     window.addEventListener('mouseup', function(event) {
@@ -24,9 +39,65 @@ chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
         console.log(up, x2, y2);
         if(down && up){
             getImage(response.imgsrc, x1, y1, x2, y2);
+            removeOverlay();
         }
     }, {once: true})
 });
+
+function createOverlay(){
+    divOverlay = document.createElement("div");
+    divOverlay.id = "screen-to-text-overlay"
+    divOverlay.setAttribute("style", `position: fixed;
+    display: block;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 2;
+    cursor: pointer;`)
+    document.body.appendChild(divOverlay);
+    disableScroll();
+}
+
+function removeOverlay(){
+    divOverlay.remove();
+    enableScroll();
+}
+
+// Turning on/off scrolling taken from https://stackoverflow.com/a/4770179/18905024
+// left: 37, up: 38, right: 39, down: 40,
+// spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
+var keys = {37: 1, 38: 1, 39: 1, 40: 1};
+
+function preventDefault(e) {
+  e.preventDefault();
+}
+
+function preventDefaultForScrollKeys(e) {
+  if (keys[e.keyCode]) {
+    preventDefault(e);
+    return false;
+  }
+}
+
+// call this to Disable
+function disableScroll() {
+  window.addEventListener('DOMMouseScroll', preventDefault, false); // older FF
+  window.addEventListener(wheelEvent, preventDefault, wheelOpt); // modern desktop
+  window.addEventListener('touchmove', preventDefault, wheelOpt); // mobile
+  window.addEventListener('keydown', preventDefaultForScrollKeys, false);
+}
+
+// call this to Enable
+function enableScroll() {
+  window.removeEventListener('DOMMouseScroll', preventDefault, false);
+  window.removeEventListener(wheelEvent, preventDefault, wheelOpt); 
+  window.removeEventListener('touchmove', preventDefault, wheelOpt);
+  window.removeEventListener('keydown', preventDefaultForScrollKeys, false);
+}
 
 function getImage(imgsrc, x1, y1, x2, y2){
     width = x2 - x1;
@@ -35,7 +106,6 @@ function getImage(imgsrc, x1, y1, x2, y2){
     var img = new Image();
     img.src = imgsrc;
     img.onload = () => {
-        console.log("yea")
         console.log(cropPlusExport(img, x1, y1, width, height));
     };
 }
@@ -61,7 +131,7 @@ function mousePos(event) {
     // If pageX/Y aren't available and clientX/Y are,
     // calculate pageX/Y - logic taken from jQuery.
     // (This is to support old IE)
-    if (event.pageX == null && event.clientX != null) {
+    /*if (event.pageX == null && event.clientX != null) {
         eventDoc = (event.target && event.target.ownerDocument) || document;
         doc = eventDoc.documentElement;
         body = eventDoc.body;
@@ -72,6 +142,6 @@ function mousePos(event) {
         event.pageY = event.clientY +
             (doc && doc.scrollTop  || body && body.scrollTop  || 0) -
             (doc && doc.clientTop  || body && body.clientTop  || 0 );
-    }
-    return [event.pageX, event.pageY];
+    }*/
+    return [event.pageX, event.pageY - window.pageYOffset];
 }
