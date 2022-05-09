@@ -1,14 +1,22 @@
 chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
     console.log(response.imgsrc);
-    window.addEventListener("mouseup", () => console.log("up"));
-    window.addEventListener("mousedown", () => console.log("down"));
+    down = false;
+    up = false
+    var x1, y1, x2, y2;
+    window.addEventListener('mousedown', function() {
+        console.log("down");
+    }, {once: true})
+    window.addEventListener('mouseup', function() {
+        console.log("up");
+    }, {once: true})
     
-    var img = new Image();
-    img.src = response.imgsrc;
-    img.onload = () => {
-        console.log(cropPlusExport(img, 0, 0, 1500, 400));
-    };
-    
+    if(down && up){
+        var img = new Image();
+        img.src = response.imgsrc;
+        img.onload = () => {
+            console.log(cropPlusExport(img, 0, 0, 1500, 400));
+        };
+    }
 });
 
 function cropPlusExport(img, cropX, cropY, cropWidth, cropHeight){
@@ -18,7 +26,7 @@ function cropPlusExport(img, cropX, cropY, cropWidth, cropHeight){
     canvas.width = cropWidth;
     canvas.height = cropHeight;
 
-    ctx.drawImage(img, cropX, cropY,    cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
     // return the .toDataURL of the temp canvas
     return(canvas.toDataURL());
 }
