@@ -4,10 +4,7 @@
     "version": "1.0",
     "manifest_version": 3,
     "action": {
-        "select": {
-            "default_title": "Copy to clipboard",
-            "default_icon": "icons/copy.png"
-        }
+        "default_title": "Copy to clipboard"
     },
     "permissions": ["activeTab", "scripting"],
     "background": {
