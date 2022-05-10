@@ -57,7 +57,7 @@ function createOverlay(){
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0,0,0,0);
     z-index: 9999;
     cursor: pointer;`)
     document.body.appendChild(divOverlay);
@@ -119,24 +119,27 @@ function showSelection(event){
     if (typeof divSelection === "undefined"){
         console.log("creating selection");
         divSelection = document.createElement("div");
-        divSelection.id = "screen-to-text-overlay"
-        divSelection.setAttribute("style", `position: fixed;
+        divSelection.id = "screen-to-text-selection-overlay"
+        divSelection.setAttribute("style", 
+        `
+        border: 3px dotted rgba(105, 105, 105, 0.5);
+        cursor: pointer;
         display: block;
+        position: fixed;
         top: ${y1}px;
         left: ${x1}px;
         height: ${event.pageY - window.pageYOffset - y1}px;
         width: ${event.pageX - x1}px;
-        background-color: rgba(83,83,83,0.1);
+        background-color: rgba(83,83,83,0.3);
         z-index: 99999;
-        cursor: pointer;`)
+        
+        `)
         document.body.appendChild(divSelection);
-        console.log(divSelection.height, divSelection.width);
+        console.log(divSelection.style.height, divSelection.style.width);
     } else {
         console.log("updating selection");
-        divSelection.height = event.pageY - window.pageYOffset - y1;
-        divSelection.width = event.pageX - x1;
-        divSelection.replaceWith(divSelection);
-        console.log(divSelection.height, divSelection.width);
+        divSelection.style.height = event.pageY - window.pageYOffset - y1 + "px";	
+        divSelection.style.width = event.pageX - x1 + "px";
     }
 }
 
