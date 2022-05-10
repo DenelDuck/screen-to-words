@@ -10,13 +10,14 @@ var wheelOpt = supportsPassive ? { passive: false } : false;
 var wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel' : 'mousewheel';
 
 var divOverlay;
+var divSelection;
+var x1, y1, x2, y2;
+down = false;
+up = false;
 
 chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
     console.log(response.imgsrc);
     createOverlay();
-    down = false;
-    up = false;
-    var x1, y1, x2, y2;
     // TODO: make sure mousedown is called first
     window.addEventListener('mousedown', function(event) {
         console.log("down");
@@ -25,6 +26,7 @@ chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
         y1 = positions[1];
         down = true;
         console.log(down, x1, y1);
+        window.addEventListener('mousemove', showSelection);
         if(down && up){
             getImage(response.imgsrc, x1, y1, x2, y2);
             removeOverlay();
@@ -56,14 +58,22 @@ function createOverlay(){
     right: 0;
     bottom: 0;
     background-color: rgba(0,0,0,0.5);
-    z-index: 2;
+    z-index: 9999;
     cursor: pointer;`)
     document.body.appendChild(divOverlay);
     disableScroll();
 }
 
 function removeOverlay(){
-    divOverlay.remove();
+    window.removeEventListener('mousemove', showSelection);
+    if (typeof divOverlay !== "undefined"){
+        divOverlay.remove();
+        divOverlay = undefined;
+    }
+    if (typeof divSelection !== "undefined"){
+        divSelection.remove();
+        divSelection = undefined;
+    }
     enableScroll();
 }
 
@@ -97,6 +107,37 @@ function enableScroll() {
   window.removeEventListener(wheelEvent, preventDefault, wheelOpt); 
   window.removeEventListener('touchmove', preventDefault, wheelOpt);
   window.removeEventListener('keydown', preventDefaultForScrollKeys, false);
+}
+
+// creates a selection box on the page, x1 and y1 must be set first
+function showSelection(event){
+    if (typeof x1 === "undefined" || typeof y1 === "undefined"){
+        console.log("x1 or y1 not set");
+        return;
+    }
+    
+    if (typeof divSelection === "undefined"){
+        console.log("creating selection");
+        divSelection = document.createElement("div");
+        divSelection.id = "screen-to-text-overlay"
+        divSelection.setAttribute("style", `position: fixed;
+        display: block;
+        top: ${y1}px;
+        left: ${x1}px;
+        height: ${event.pageY - window.pageYOffset - y1}px;
+        width: ${event.pageX - x1}px;
+        background-color: rgba(83,83,83,0.1);
+        z-index: 99999;
+        cursor: pointer;`)
+        document.body.appendChild(divSelection);
+        console.log(divSelection.height, divSelection.width);
+    } else {
+        console.log("updating selection");
+        divSelection.height = event.pageY - window.pageYOffset - y1;
+        divSelection.width = event.pageX - x1;
+        divSelection.replaceWith(divSelection);
+        console.log(divSelection.height, divSelection.width);
+    }
 }
 
 function getImage(imgsrc, x1, y1, x2, y2){
