@@ -11,7 +11,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         "from a content script:" + sender.tab.url :
         "from the extension");
     if (request.msg === "getCurrentTab") {
-        chrome.tabs.captureVisibleTab(null, {}, function(dataUrl){
+        chrome.tabs.captureVisibleTab(null, {format: "png"}, function(dataUrl){
             sendResponse({imgsrc: dataUrl});
         });
         return true;

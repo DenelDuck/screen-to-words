@@ -15,6 +15,8 @@ var x1, y1, x2, y2;
 down = false;
 up = false;
 
+document.body.style.overflow = "hidden";
+document.onload = () => {};
 chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
     console.log(response.imgsrc);
     createOverlay();
@@ -135,11 +137,12 @@ function showSelection(event){
         
         `)
         document.body.appendChild(divSelection);
-        console.log(divSelection.style.height, divSelection.style.width);
+        console.log(divSelection.style.width, divSelection.style.height);
     } else {
         console.log("updating selection");
         divSelection.style.height = event.pageY - window.pageYOffset - y1 + "px";	
         divSelection.style.width = event.pageX - x1 + "px";
+        console.log( divSelection.style.width, divSelection.style.height,);
     }
 }
 
@@ -147,35 +150,44 @@ function getImage(imgsrc, x1, y1, x2, y2){
     width = x2 - x1;
     height = y2 - y1;
     console.log("loading image")
+    console.log(width, height);
     var img = new Image();
-    img.src = imgsrc;
     img.onload = () => {
-        console.log(cropPlusExport(img, x1, y1, width, height));
     };
+    img.src = imgsrc;
+    console.log(cropPlusExport(img, x1, y1, width, height));
+    document.body.appendChild(img);
 }
 
 function cropPlusExport(img, cropX, cropY, cropWidth, cropHeight){
     console.log("cropping image");	
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext('2d');
+    console.log(img.width, img.height)
 
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
+    // scale canvas size and cropping coordinates to match the image aspect ratio
+    // because captureVisibleTab() returns a full-sized image, but the browser renders a lower
+    // quality image for the client, thus pixel coordinates and sizes are not the same
+    canvas.width = cropWidth * (img.width / window.innerWidth);
+    canvas.height = cropHeight * (img.height / window.innerHeight);
+    cropX = cropX * (img.width / window.innerWidth);
+    cropY = cropY * (img.height / window.innerHeight);
+    ctx.drawImage(img, cropX, cropY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+    
 
-    ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
     // return the .toDataURL of the temp canvas
     return(canvas.toDataURL());
 }
 
 function mousePos(event) {
-    var eventDoc, doc, body;
+    /*var eventDoc, doc, body;
 
     event = event || window.event; // IE-ism
 
     // If pageX/Y aren't available and clientX/Y are,
     // calculate pageX/Y - logic taken from jQuery.
     // (This is to support old IE)
-    /*if (event.pageX == null && event.clientX != null) {
+    if (event.pageX == null && event.clientX != null) {
         eventDoc = (event.target && event.target.ownerDocument) || document;
         doc = eventDoc.documentElement;
         body = eventDoc.body;
