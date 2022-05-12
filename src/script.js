@@ -156,8 +156,7 @@ function getImage(imgsrc, x1, y1, x2, y2){
     img.onload = () => {
         console.log("image loaded");
         var resImg = cropPlusExport(img, x1, y1, width, height);
-        var text = await getTextFromImage(resImg);
-        console.log("text", text);
+        getTextFromImage(resImg);
     };
     img.src = imgsrc;
 
