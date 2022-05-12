@@ -1,4 +1,5 @@
-// modern Chrome requires { passive: false } when adding event
+
+
 var supportsPassive = false;
 try {
   window.addEventListener("test", null, Object.defineProperty({}, 'passive', {
@@ -139,10 +140,10 @@ function showSelection(event){
         document.body.appendChild(divSelection);
         console.log(divSelection.style.width, divSelection.style.height);
     } else {
-        console.log("updating selection");
+        //console.log("updating selection");
         divSelection.style.height = event.pageY - window.pageYOffset - y1 + "px";	
         divSelection.style.width = event.pageX - x1 + "px";
-        console.log( divSelection.style.width, divSelection.style.height,);
+        //console.log( divSelection.style.width, divSelection.style.height,);
     }
 }
 
@@ -153,30 +154,53 @@ function getImage(imgsrc, x1, y1, x2, y2){
     console.log(width, height);
     var img = new Image();
     img.onload = () => {
+        console.log("image loaded");
+        var resImg = cropPlusExport(img, x1, y1, width, height);
+        var text = await getTextFromImage(resImg);
+        console.log("text", text);
     };
     img.src = imgsrc;
-    console.log(cropPlusExport(img, x1, y1, width, height));
-    document.body.appendChild(img);
+
+}
+
+async function getTextFromImage(img){
+    //const rectangle = {left: x1 * (img.width / window.innerWidth), top: y1 * (img.height / window.innerHeight), width: (x2 - x1) * (img.width / window.innerWidth), height: (y2 - y1) * (img.height / window.innerHeight)};
+    const worker = Tesseract.createWorker({
+        logger: m => console.log(m)
+      });
+    console.log(img);
+    (async () => {
+        await worker.load();
+        await worker.loadLanguage('eng');
+        await worker.initialize('eng');
+        const { data: { text } } = await worker.recognize(img);
+        console.log(text);
+        await worker.terminate();
+        return text;
+    })();
 }
 
 function cropPlusExport(img, cropX, cropY, cropWidth, cropHeight){
     console.log("cropping image");	
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext('2d');
-    console.log(img.width, img.height)
+
 
     // scale canvas size and cropping coordinates to match the image aspect ratio
     // because captureVisibleTab() returns a full-sized image, but the browser renders a lower
     // quality image for the client, thus pixel coordinates and sizes are not the same
-    canvas.width = cropWidth * (img.width / window.innerWidth);
-    canvas.height = cropHeight * (img.height / window.innerHeight);
-    cropX = cropX * (img.width / window.innerWidth);
-    cropY = cropY * (img.height / window.innerHeight);
-    ctx.drawImage(img, cropX, cropY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
-    
+    console.log((img.width / window.innerWidth), (img.height / window.innerHeight));
 
+    var imageToWindowRatio = img.width / window.innerWidth;
+    canvas.width = cropWidth * imageToWindowRatio;
+    canvas.height = cropHeight * imageToWindowRatio;
+    cropX = cropX * imageToWindowRatio;
+    cropY = cropY * imageToWindowRatio;
+    console.log(canvas.width, canvas.height)
+    
+    ctx.drawImage(img, cropX, cropY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
     // return the .toDataURL of the temp canvas
-    return(canvas.toDataURL());
+    return(canvas.toDataURL(0, 0, canvas.width, canvas.height)/*canvas.toDataURL()*/);
 }
 
 function mousePos(event) {

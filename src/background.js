@@ -1,7 +1,7 @@
 chrome.action.onClicked.addListener((tab) => {
     chrome.scripting.executeScript({
         target: {tabId: tab.id},
-        files: ["script.js"]
+        files: ["src/js/tesseract.min.js", "src/script.js"]
     })
 });
 
@@ -17,5 +17,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 });
+
 
 
