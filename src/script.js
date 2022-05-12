@@ -78,6 +78,7 @@ function removeOverlay(){
         divSelection = undefined;
     }
     enableScroll();
+    document.body.style.overflow = "visible";
 }
 
 // Turning on/off scrolling taken from https://stackoverflow.com/a/4770179/18905024
@@ -147,7 +148,7 @@ function showSelection(event){
     }
 }
 
-function getImage(imgsrc, x1, y1, x2, y2){
+async function getImage(imgsrc, x1, y1, x2, y2){
     width = x2 - x1;
     height = y2 - y1;
     console.log("loading image")
@@ -156,7 +157,7 @@ function getImage(imgsrc, x1, y1, x2, y2){
     img.onload = () => {
         console.log("image loaded");
         var resImg = cropPlusExport(img, x1, y1, width, height);
-        getTextFromImage(resImg);
+        getTextFromImage(resImg).then(text => { createResultPage(text) });
     };
     img.src = imgsrc;
 
@@ -168,7 +169,7 @@ async function getTextFromImage(img){
         logger: m => console.log(m)
       });
     console.log(img);
-    (async () => {
+    const result = await (async () => {
         await worker.load();
         await worker.loadLanguage('eng');
         await worker.initialize('eng');
@@ -177,6 +178,32 @@ async function getTextFromImage(img){
         await worker.terminate();
         return text;
     })();
+    return result;
+}
+
+function createResultPage(text){
+    console.log("creating result page");
+    let params = `scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,
+        width=${window.innerWidth * 0.5},height=${window.innerHeight * 0.7},left=0,top=0`;
+    console.log(params);
+    let numberOfLineBreaks = (text.match(/\n/g) || []).length;
+    let heightTextarea = 20 + numberOfLineBreaks * 20 ;
+
+    let newWin = window.open("", "screen-to-words", params);
+    newWin.document.body.innerHTML = `
+    <h1>Here is your text!</h1>
+    <p>Keep in mind that the AI is not always 100% correct, so always check if 
+    the result corresponds to what you were expecting</p>
+    <div><textarea id='textArea' style="width: 300px; height: 300;">${text}</textarea></div>
+    <div><button id="button" onclick="copyToClipBoard()">Copy to clipboard</button></div>
+    `;
+    newWin.document.getElementById("button").addEventListener("click", function () {
+        var content = newWin.document.getElementById('textArea');     
+        content.select();
+        newWin.document.execCommand('copy');
+        newWin.getSelection().removeAllRanges();
+    })
+
 }
 
 function cropPlusExport(img, cropX, cropY, cropWidth, cropHeight){
