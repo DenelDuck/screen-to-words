@@ -17,7 +17,6 @@ down = false;
 up = false;
 
 document.body.style.overflow = "hidden";
-document.onload = () => {};
 chrome.runtime.sendMessage({msg: "getCurrentTab"}, function(response) {
     console.log(response.imgsrc);
     createOverlay();
@@ -186,24 +185,58 @@ function createResultPage(text){
     let params = `scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,
         width=${window.innerWidth * 0.5},height=${window.innerHeight * 0.7},left=0,top=0`;
     console.log(params);
-    let numberOfLineBreaks = (text.match(/\n/g) || []).length;
-    let heightTextarea = 20 + numberOfLineBreaks * 20 ;
 
     let newWin = window.open("", "screen-to-words", params);
+    
     newWin.document.body.innerHTML = `
-    <h1>Here is your text!</h1>
-    <p>Keep in mind that the AI is not always 100% correct, so always check if 
-    the result corresponds to what you were expecting</p>
-    <div><textarea id='textArea' style="width: 300px; height: 300;">${text}</textarea></div>
-    <div><button id="button" onclick="copyToClipBoard()">Copy to clipboard</button></div>
-    `;
-    newWin.document.getElementById("button").addEventListener("click", function () {
-        var content = newWin.document.getElementById('textArea');     
-        content.select();
-        newWin.document.execCommand('copy');
-        newWin.getSelection().removeAllRanges();
-    })
+    <!DOCTYPE html>
+    <html lang="en">
+        <body>
+            <h1>Here is your text!</h1>
+            <p>Keep in mind that the AI is not always 100% correct, so always check if 
+            the result corresponds to what you were expecting</p>
+            <div><textarea class="textArea" id="textArea" style="width: 300px; height: 300px;"></textarea></div>
+            <div><button class="button" id="button">Copy to clipboard</button></div>
+        </body>
+    </html>
+    `
+    var css = chrome.runtime.getURL(`src/static/css/interface.css`);
 
+    var link = newWin.document.createElement("link");
+    link.href = css;
+    link.type = "text/css";
+    link.rel = "stylesheet";
+
+    newWin.document.getElementsByTagName("head")[0].appendChild(link);
+
+    var textArea = newWin.document.getElementById("textArea");
+    textArea.value = text;
+    textArea.setAttribute("initialWidth", textArea.offsetWidth);
+
+    var button = newWin.document.getElementById("button");
+
+    button.addEventListener("click", function () {  
+        newWin.navigator.clipboard.writeText(textArea.value);
+    });
+
+    textArea.addEventListener("mousedown", function () {
+        newWin.addEventListener("mousemove", setButtonPos);
+        newWin.addEventListener("mouseup", function () {
+            newWin.removeEventListener("mousemove", setButtonPos);
+        }, {once: true});
+    });
+}
+
+function setButtonPos(event){
+    var button = event.currentTarget.document.getElementById("button");
+    var textArea = event.currentTarget.document.getElementById("textArea");
+    if (parseInt(textArea.offsetWidth) !== parseInt(textArea.getAttribute("initialWidth"))){
+        console.log("setting button pos");
+        var newPos = (textArea.offsetWidth / 2 - button.offsetWidth / 2 - 2) > 0 ? (textArea.offsetWidth / 2 - button.offsetWidth / 2 - 2) : 0;
+        console.log("button pos:", `left: ${newPos}px;`);
+        button.setAttribute("style", `left: ${newPos}px;`);
+        textArea.setAttribute("initialWidth", textArea.offsetWidth);
+    }
 }
 
 function cropPlusExport(img, cropX, cropY, cropWidth, cropHeight){

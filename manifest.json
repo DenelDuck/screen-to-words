@@ -9,6 +9,12 @@
     "permissions": ["activeTab", "scripting"],
     "background": {
         "service_worker": "src/background.js", "type": "module"
-    }
+    }, 
+    "web_accessible_resources": [
+        {
+            "resources": ["src/static/css/interface.css", "src/static/html/interface.html"],
+            "matches": ["*://*/*"]
+        }
+    ]
     
   }

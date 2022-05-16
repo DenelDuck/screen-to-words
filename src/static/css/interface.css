@@ -1,0 +1,37 @@
+.button {
+    background-color: forestgreen;
+    border: 7px;
+    color: white;
+    border-color: green;
+    border-radius: 12px;
+    margin: 4px 2px;
+    font-size: 16px;
+    padding: 20px 10px;
+    position: relative;
+    left: 48px;
+    width: 200px;
+    text-align: center;
+}
+
+.button:hover {
+    background-color: black;
+    border-color: #228B22;
+}
+
+.textArea {
+    padding: 2px;
+    width: 300px;
+    height: 300px;
+    position: relative;
+}
+
+body {
+    background-color: black;
+    color: lightgray;
+    font-size: 16px;
+}
+  
+.dark-mode {
+    background-color: black;
+    color: white;
+}
